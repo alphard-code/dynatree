@@ -1,9 +1,9 @@
 <?php
 namespace yiiExtensions\dynatree\nestedSets;
 
-use common\modules\main\actions\Action, Yii, CActiveRecord, CHttpException, CActiveDataProvider;
+use CAction, Yii, CActiveRecord, CHttpException, CActiveDataProvider;
 
-class AjaxDataSourceAction extends Action
+class AjaxDataSourceAction extends CAction
 {
     /**
      * @var \CActiveRecord
@@ -18,7 +18,7 @@ class AjaxDataSourceAction extends Action
     public function run($key = null, $initiallySelected = null)
     {
         $this->initiallySelectedID = $initiallySelected;
-        $nodeListFinderModel = $this->modelClass;
+        $nodeListFinderModel       = $this->modelClass;
 
         if ($key == null) {
             if ($this->initiallySelectedID == null) {
@@ -42,14 +42,15 @@ class AjaxDataSourceAction extends Action
             }
         }
 
-        $converter = new NodeConverter(
-            new CActiveDataProvider($nodeListFinderModel)
-        );
-        $converter->isSliceOfTree = ($key != null);
+        $converter                      = new NodeConverter(new CActiveDataProvider($nodeListFinderModel));
+        $converter->isSliceOfTree       = ($key != null);
         $converter->initiallySelectedID = $this->initiallySelectedID;
-        $this->outputNodeList = $converter->getOrderedNodes();
+        $this->outputNodeList           = $converter->getOrderedNodes();
 
-        $this->getController()->renderJson($this->outputNodeList);
+        if (!headers_sent()) {
+            header('Content-Type: application/json;');
+        }
+        echo \CJSON::encode($this->outputNodeList);
     }
 
 
