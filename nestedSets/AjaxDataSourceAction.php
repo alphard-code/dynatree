@@ -1,0 +1,56 @@
+<?php
+namespace yiiExtensions\dynatree\nestedSets;
+
+use common\modules\main\actions\Action, Yii, CActiveRecord, CHttpException, CActiveDataProvider;
+
+class AjaxDataSourceAction extends Action
+{
+    /**
+     * @var \CActiveRecord
+     */
+    public $modelClass;
+
+    protected $initiallySelectedID;
+    protected $initiallySelected;
+
+    protected $outputNodeList = array();
+
+    public function run($key = null, $initiallySelected = null)
+    {
+        $this->initiallySelectedID = $initiallySelected;
+        $nodeListFinderModel = $this->modelClass;
+
+        if ($key == null) {
+            if ($this->initiallySelectedID == null) {
+                $nodeListFinderModel = $this->modelClass->roots()->allSorted();
+            } else {
+                $this->initiallySelected = $this->modelClass->findByPk((int)$this->initiallySelectedID);
+                if ($this->initiallySelected instanceof $this->modelClass) {
+                    if (!$this->initiallySelected->isRoot()) {
+                        $nodeListFinderModel = $this->initiallySelected->rootsWithDiveToCurrentNode();
+                    } else {
+                        $nodeListFinderModel = $this->modelClass->roots()->allSorted();
+                    }
+                }
+            }
+        } else {
+            $objRoot = $this->modelClass->findByPk((int)$key);
+            if ($objRoot instanceof $this->modelClass) {
+                $nodeListFinderModel = $objRoot->children()->allSorted();
+            } else {
+                throw new CHttpException(404);
+            }
+        }
+
+        $converter = new NodeConverter(
+            new CActiveDataProvider($nodeListFinderModel)
+        );
+        $converter->isSliceOfTree = ($key != null);
+        $converter->initiallySelectedID = $this->initiallySelectedID;
+        $this->outputNodeList = $converter->getOrderedNodes();
+
+        $this->getController()->renderJson($this->outputNodeList);
+    }
+
+
+}
