@@ -15,9 +15,12 @@ class AjaxDataSourceAction extends CAction
 
     protected $outputNodeList = array();
 
-    public function run($key = null, $initiallySelected = null)
+    public function run($key = null)
     {
-        $this->initiallySelectedID = $initiallySelected;
+        $initiallySelected         = Yii::app()->getRequest()->getQuery('initiallySelected');
+        // arrays are not supported
+        // @todo fix
+        $this->initiallySelectedID = is_array($initiallySelected) ? null : $initiallySelected;
         $nodeListFinderModel       = $this->modelClass;
 
         if ($key == null) {

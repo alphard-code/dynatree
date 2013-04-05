@@ -1,6 +1,8 @@
 <?php
 namespace yiiExtensions\dynatree;
 
+use CHtml;
+
 /**
  * A simple wrapper of Dynatree plugin.
  * Widget can be associated with a data model and an attribute, if so hidden input with automatically generated
@@ -11,6 +13,10 @@ namespace yiiExtensions\dynatree;
  */
 class Dynatree extends \CWidget
 {
+
+    const SELECT_MODE_SINGLE     = 1;
+    const SELECT_MODE_MULTI      = 2;
+    const SELECT_MODE_MULTI_HIER = 3;
     /**
      * @var array Options that will be passed to Javascript constructor of Dynatree plugin.
      * Note that you should wrap values responding for callback functions with {@link CJavaScriptExpression} to prevent it
@@ -76,13 +82,48 @@ class Dynatree extends \CWidget
 
             $htmlOptions = array();
             \CHtml::resolveNameID($this->model, $this->attribute, $htmlOptions);
-            $eventHandler = "
-function (node)
+
+            switch ($this->updateInputValueEvent) {
+                case 'onSelect':
+                    $funcDeclaration = 'flag, node';
+                    break;
+                default:
+                    $funcDeclaration = 'node';
+                    break;
+            }
+
+            // default value provided by Dynatree
+            if (!isset($this->options['selectMode'])) {
+                $this->options['selectMode'] = self::SELECT_MODE_MULTI;
+            }
+
+            if ($this->options['selectMode'] == self::SELECT_MODE_SINGLE) {
+                $eventHandler = "function ({$funcDeclaration}) {
+                    $('#{$htmlOptions['id']}').val(node.data.key);
+                }";
+                $this->divContent .= \CHtml::activeHiddenField($this->model, $this->attribute);
+            } elseif ($this->options['selectMode'] == self::SELECT_MODE_MULTI) {
+                $htmlOptions['name'] .= '[]';
+                $eventHandler = <<<JS
+function ({$funcDeclaration})
 {
-    $('#{$htmlOptions['id']}').val(node.data.key);
+    var existingInput = $('#{$htmlOptions['id']} input[value="' + node.data.key + '"]');
+    if (existingInput.length == 0)
+    {
+        $('#{$htmlOptions['id']}').append($('<input/>',{
+            'type':'checkbox',
+            'value': node.data.key,
+            'name': '${htmlOptions['name']}',
+            'checked':true,
+            'style':'display:none;'
+        }));
+    } else {
+        existingInput.remove();
+    }
 }
-";
-            $this->divContent .= \CHtml::activeHiddenField($this->model, $this->attribute);
+JS;
+                $this->divContent .= CHtml::checkBoxList($htmlOptions['name'], null, array());
+            }
             $this->options[$this->updateInputValueEvent] = new \CJavaScriptExpression($eventHandler);
         }
     }

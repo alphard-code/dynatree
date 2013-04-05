@@ -50,7 +50,7 @@ class Dynatree extends \CWidget
     public $options = array();
 
     /**
-     * @var int|null An ID of node that should be initially selected (active). Defaults to null, meaning
+     * @var int|array|null An ID of node that should be initially selected (active). Defaults to null, meaning
      * no actions will be performed.
      */
     public $initiallySelected;
@@ -172,10 +172,17 @@ class Dynatree extends \CWidget
                 'initiallySelected' => $this->initiallySelected
             );
         }
+        if (!is_array($this->initiallySelected)) {
+            $this->initiallySelected = array($this->initiallySelected);
+        }
         $this->options['onPostInit'] = new \CJavaScriptExpression('
 function(isReloading, isError)
 {
-this.$tree.dynatree("getTree").getNodeByKey("' . $this->initiallySelected . '").activate();
+    var initiallySelected = ' . \CJavaScript::encode($this->initiallySelected) . ';
+    var tree = this.$tree;
+    $.each(initiallySelected, function(key, value){
+        tree.dynatree("getTree").getNodeByKey(value).select();
+    });
 }
 ');
     }
@@ -291,6 +298,10 @@ JS;
 
     public function run()
     {
+        if (isset($this->options['updateInputValueEvent'])) {
+            $this->init['updateInputValueEvent'] = $this->options['updateInputValueEvent'];
+            unset($this->options['updateInputValueEvent']);
+        }
         $this->init['options'] = $this->options;
         $this->widget('yiiExtensions\dynatree\Dynatree', $this->init);
     }
