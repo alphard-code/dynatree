@@ -105,11 +105,16 @@ class Dynatree extends \CWidget
             } elseif ($this->options['selectMode'] == self::SELECT_MODE_MULTI) {
                 $htmlOptions['name'] .= '[]';
                 $eventHandler = <<<JS
-function ({$funcDeclaration})
-{
+function ({$funcDeclaration}) {
     var existingInput = $('#{$htmlOptions['id']} input[value="' + node.data.key + '"]');
-    if (existingInput.length == 0)
-    {
+    var itExists = !(existingInput.length == 0);
+    var needToAddInput = !itExists;
+
+    // onSelect event
+    if (typeof(flag) != "undefined") {
+        needToAddInput = flag;
+    }
+    if (needToAddInput) {
         $('#{$htmlOptions['id']}').append($('<input/>',{
             'type':'checkbox',
             'value': node.data.key,
@@ -117,7 +122,7 @@ function ({$funcDeclaration})
             'checked':true,
             'style':'display:none;'
         }));
-    } else {
+    } else if(itExists) {
         existingInput.remove();
     }
 }
