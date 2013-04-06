@@ -165,15 +165,15 @@ class Dynatree extends \CWidget
 
     protected function handleAjaxInitiallySelection()
     {
+        if (!is_array($this->initiallySelected)) {
+            $this->initiallySelected = array($this->initiallySelected);
+        }
         if (isset($this->options['initAjax']['data'])) {
             $this->options['initAjax']['data']['initiallySelected'] = $this->initiallySelected;
         } else {
             $this->options['initAjax']['data'] = array(
                 'initiallySelected' => $this->initiallySelected
             );
-        }
-        if (!is_array($this->initiallySelected)) {
-            $this->initiallySelected = array($this->initiallySelected);
         }
         $this->options['onPostInit'] = new \CJavaScriptExpression('
 function(isReloading, isError)
