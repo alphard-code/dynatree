@@ -6,50 +6,56 @@ use CAction, Yii, CActiveRecord, CHttpException, CActiveDataProvider;
 class AjaxDataSourceAction extends CAction
 {
     /**
-     * @var \CActiveRecord
+     * @var \CActiveRecord|\NestedSetBehavior
      */
     public $modelClass;
 
-    protected $initiallySelectedID;
-    protected $initiallySelected;
+    /**
+     * @var array List of primary keys of nodes that should be initially selected (loaded, visible)
+     */
+    protected $initiallySelectedPks;
+
+    /**
+     * @var \CActiveRecord[]|\NestedSetBehavior[] List of models that should be initially selected
+     */
+    protected $initiallySelectedModels;
 
     protected $outputNodeList = array();
 
     public function run($key = null)
     {
-        $initiallySelected         = Yii::app()->getRequest()->getQuery('initiallySelected');
-        // arrays are not supported
-        // @todo fix
-        $this->initiallySelectedID = is_array($initiallySelected) ? null : $initiallySelected;
-        $nodeListFinderModel       = $this->modelClass;
+        $initiallySelected = Yii::app()->getRequest()->getQuery('initiallySelected', null);
 
-        if ($key == null) {
-            if ($this->initiallySelectedID == null) {
-                $nodeListFinderModel = $this->modelClass->roots()->allSorted();
-            } else {
-                $this->initiallySelected = $this->modelClass->findByPk((int)$this->initiallySelectedID);
-                if ($this->initiallySelected instanceof $this->modelClass) {
-                    if (!$this->initiallySelected->isRoot()) {
-                        $nodeListFinderModel = $this->initiallySelected->rootsWithDiveToCurrentNode();
-                    } else {
-                        $nodeListFinderModel = $this->modelClass->roots()->allSorted();
-                    }
-                }
-            }
-        } else {
-            $objRoot = $this->modelClass->findByPk((int)$key);
-            if ($objRoot instanceof $this->modelClass) {
-                $nodeListFinderModel = $objRoot->children()->allSorted();
+        $this->initiallySelectedPks = is_array($initiallySelected) ? $initiallySelected : null;
+
+        // model instance given to dataprovider
+        $nodeListFinderModel = $this->modelClass;
+
+        // Find children nodes of concrete node.
+        if ($key != null) {
+            $parentNode = $this->modelClass->findByPk((int)$key);
+            if ($parentNode instanceof $this->modelClass) {
+                $nodeListFinderModel = $parentNode->children()->allSorted();
             } else {
                 throw new CHttpException(404);
             }
+        } // Get a list of root nodes. If specified, list will contain diving to some nodes, named "initially selected".
+        else {
+            // No initially selection - just find root nodes and sort them
+            if ($this->initiallySelectedPks == null) {
+                $nodeListFinderModel->roots()->allSorted();
+            } // Need to dive into the tree to get chain of nodes, leading to initially selected ones.
+            else {
+                $nodeListFinderModel->rootsWithDiveTo($this->initiallySelectedPks);
+            }
+
         }
 
-        $converter                      = new NodeConverter(new CActiveDataProvider($nodeListFinderModel));
-        $converter->isSliceOfTree       = ($key != null);
-        $converter->initiallySelectedID = $this->initiallySelectedID;
-        $this->outputNodeList           = $converter->getOrderedNodes();
+        $converter                = new NodeConverter(new CActiveDataProvider($nodeListFinderModel));
+        $converter->isSliceOfTree = ($key != null);
+        $this->outputNodeList     = $converter->getOrderedNodes();
 
+        $this->getController()->disableProfiler();
         if (!headers_sent()) {
             header('Content-Type: application/json;');
         }

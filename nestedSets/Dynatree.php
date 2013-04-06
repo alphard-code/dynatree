@@ -181,7 +181,11 @@ function(isReloading, isError)
     var initiallySelected = ' . \CJavaScript::encode($this->initiallySelected) . ';
     var tree = this.$tree;
     $.each(initiallySelected, function(key, value){
-        tree.dynatree("getTree").getNodeByKey(value).select();
+        var node =  tree.dynatree("getTree").getNodeByKey(value);
+        if (node) {
+            node.select();
+            node.makeVisible();
+        }
     });
 }
 ');
