@@ -38,6 +38,8 @@ class Dynatree extends \CWidget
 
     /**
      * @var string Name of an event that will trigger update of hidden input value. Defaults to 'onActivate'.
+     * If you provide custom handler for this event at {@link options}, it will be inserted at the end of
+     * automatically generated handler. You should not use function declaration (i.e. "function() {}") at your handler.
      */
     public $updateInputValueEvent = 'onActivate';
 
@@ -92,6 +94,12 @@ class Dynatree extends \CWidget
                     break;
             }
 
+            if (isset($this->options[$this->updateInputValueEvent])) {
+                $userEventHandler = $this->options[$this->updateInputValueEvent];
+            } else {
+                $userEventHandler = '';
+            }
+
             // default value provided by Dynatree
             if (!isset($this->options['selectMode'])) {
                 $this->options['selectMode'] = self::SELECT_MODE_MULTI;
@@ -100,6 +108,7 @@ class Dynatree extends \CWidget
             if ($this->options['selectMode'] == self::SELECT_MODE_SINGLE) {
                 $eventHandler = "function ({$funcDeclaration}) {
                     $('#{$htmlOptions['id']}').val(node.data.key);
+                    {$userEventHandler}
                 }";
                 $this->divContent .= \CHtml::activeHiddenField($this->model, $this->attribute);
             } elseif ($this->options['selectMode'] == self::SELECT_MODE_MULTI) {
@@ -125,6 +134,7 @@ function ({$funcDeclaration}) {
     } else if(itExists) {
         existingInput.remove();
     }
+    {$userEventHandler}
 }
 JS;
                 $this->divContent .= CHtml::checkBoxList($htmlOptions['name'], null, array());

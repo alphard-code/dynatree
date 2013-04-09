@@ -121,11 +121,11 @@ class NodeConverter extends CComponent
             'title' => $node->getAttribute('name'),
             'key'   => $node->getAttribute('id'),
         );
-        if ($this->initiallySelectedID == $node->getAttribute('id')) {
+//        if ($this->initiallySelectedID == $node->getAttribute('id')) {
 //            $arrOutput['activate'] = true;
 //            $arrOutput['focus'] = false;
 //            $arrOutput['select'] = true;
-        }
+//        }
         if (!empty($children)) {
             $arrOutput['children'] = $this->convertNodes($children);
         } elseif ($node->getNumOfChildren() != 0) {
