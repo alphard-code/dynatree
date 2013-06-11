@@ -50,7 +50,6 @@ class AjaxDataSourceAction extends CAction
             else {
                 $nodeListFinderModel->rootsWithDiveTo($this->initiallySelectedPks);
             }
-
         }
 
         $converter                = new NodeConverter(new CActiveDataProvider($nodeListFinderModel, array('criteria' => $givenFinderCriteria)));
