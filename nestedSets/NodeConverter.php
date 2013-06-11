@@ -35,12 +35,17 @@ class NodeConverter extends CComponent
     public function getOrderedNodes()
     {
         if ($this->_orderedNodes === null) {
-            if ($this->isSliceOfTree) {
-                $this->simplyOrderNodes($this->dataProvider->getData());
+            $data = $this->dataProvider->getData();
+            if (is_array($data) && !empty($data)) {
+                if ($this->isSliceOfTree) {
+                    $this->simplyOrderNodes($data);
+                } else {
+                    $this->orderNodes($data);
+                }
+                $this->_orderedNodes = $this->convertNodes($this->_orderedNodes);
             } else {
-                $this->orderNodes($this->dataProvider->getData());
+                $this->_orderedNodes = array();
             }
-            $this->_orderedNodes = $this->convertNodes($this->_orderedNodes);
         }
 
         return $this->_orderedNodes;

@@ -31,6 +31,8 @@ class AjaxDataSourceAction extends CAction
         // model instance given to dataprovider
         $nodeListFinderModel = $this->modelClass;
 
+        $givenFinderCriteria = clone $nodeListFinderModel->getDbCriteria();
+
         // Find children nodes of concrete node.
         if ($key != null) {
             $parentNode = $this->modelClass->findByPk((int)$key);
@@ -51,7 +53,7 @@ class AjaxDataSourceAction extends CAction
 
         }
 
-        $converter                = new NodeConverter(new CActiveDataProvider($nodeListFinderModel));
+        $converter                = new NodeConverter(new CActiveDataProvider($nodeListFinderModel, array('criteria' => $givenFinderCriteria)));
         $converter->isSliceOfTree = ($key != null);
         $this->outputNodeList     = $converter->getOrderedNodes();
 
